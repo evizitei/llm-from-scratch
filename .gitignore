@@ -1,0 +1,28 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data & model artifacts (datasets, downloaded weights, checkpoints)
+data/
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.gguf
+
+# OS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
