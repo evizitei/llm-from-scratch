@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>llm-from-scratch — components</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 640px;
+      margin: 4rem auto;
+      padding: 0 1rem;
+      background: #fafafa;
+      color: #1a1a1a;
+    }
+    h1 { font-size: 1.5rem; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 1rem 0; }
+    a { color: #0b5fff; text-decoration: none; font-weight: 600; font-size: 1.05rem; }
+    a:hover { text-decoration: underline; }
+    p.desc { margin: 0.15rem 0 0; color: #555; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>llm-from-scratch components</h1>
+  <ul>
+    {% for component in components %}
+    <li>
+      <a href="{{ url_for(component.slug ~ '.index') }}">{{ component.name }}</a>
+      <p class="desc">{{ component.description }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+</body>
+</html>

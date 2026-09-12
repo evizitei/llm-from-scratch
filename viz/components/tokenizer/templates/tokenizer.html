@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Tokenizer — llm-from-scratch</title>
+  <link rel="stylesheet" href="{{ url_for('tokenizer.static', filename='tokenizer.css') }}">
+</head>
+<body>
+  <p class="back"><a href="{{ url_for('index') }}">&larr; components</a></p>
+  <h1>Toy Tokenizer</h1>
+  <p class="intro">
+    Type or paste text, or load an example below, then tokenize it with the
+    regex-based tokenizer from chapter 2 of <em>Build a Large Language Model
+    (From Scratch)</em>.
+  </p>
+
+  <div class="examples">
+    {% for example in examples %}
+    <button type="button" class="example-btn" data-example-id="{{ example.id }}">{{ example.label }}</button>
+    {% endfor %}
+  </div>
+
+  <textarea id="input-text" rows="12" placeholder="Type or paste text here..."></textarea>
+
+  <div class="actions">
+    <button type="button" id="tokenize-btn">Tokenize</button>
+    <span id="token-count"></span>
+  </div>
+
+  <div id="tokens"></div>
+
+  <script src="{{ url_for('tokenizer.static', filename='tokenizer.js') }}"></script>
+</body>
+</html>

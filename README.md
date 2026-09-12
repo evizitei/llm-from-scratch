@@ -31,6 +31,21 @@ Add a new dependency:
 uv add <package>
 ```
 
+Run the test suite:
+
+```bash
+uv run pytest
+```
+
+Launch the component visualizer (a small Flask app for poking at pieces of
+the codebase through a web UI — currently just the tokenizer):
+
+```bash
+uv run python -m viz.app
+```
+
+Then open http://127.0.0.1:5001/.
+
 ## Layout
 
 - `src/llm_from_scratch/` — package code, loosely split by book topic:
@@ -39,5 +54,14 @@ uv add <package>
   - `model/` — the GPT architecture itself (transformer blocks, layer norm, etc.)
   - `training/` — pretraining loop, loss, optimizer setup
   - `finetuning/` — classification and instruction finetuning
+- `tests/` — pytest suite, mirroring the `src/llm_from_scratch/` layout
+  (e.g. `tests/data/test_tokenizer.py` tests
+  `src/llm_from_scratch/data/tokenizer.py`). Any downloading/caching of
+  sample data for tests lives in `tests/conftest.py`, not in the library
+  code itself.
+- `viz/` — a small Flask app for interacting with pieces of the codebase in
+  a browser. Each component (e.g. `viz/components/tokenizer/`) is a
+  blueprint with its own routes, templates, static assets, and (where
+  useful) bundled example text files.
 - `notebooks/` — scratch/exploratory notebooks
 - `data/` — downloaded datasets and model weights (gitignored, not committed)

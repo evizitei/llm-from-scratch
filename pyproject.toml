@@ -26,3 +26,12 @@ dev = [
     "jupyterlab>=4.6.3",
     "ruff>=0.16.7",
 ]
+test = [
+    "pytest>=8.4.2",
+]
+viz = [
+    "flask>=3.1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

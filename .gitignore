@@ -12,8 +12,10 @@ wheels/
 # Jupyter
 .ipynb_checkpoints/
 
-# Data & model artifacts (datasets, downloaded weights, checkpoints)
-data/
+# Data & model artifacts (datasets, downloaded weights, checkpoints).
+# Anchored to the repo root so it doesn't also swallow directories named
+# "data" elsewhere in the tree (e.g. src/llm_from_scratch/data/, tests/data/).
+/data/
 *.pt
 *.pth
 *.bin
