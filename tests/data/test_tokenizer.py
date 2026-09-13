@@ -1,10 +1,6 @@
 from pathlib import Path
 
-from llm_from_scratch.data.tokenizer import (
-    SimpleTokenizer,
-    iter_directory_texts,
-    iter_tokens,
-)
+from llm_from_scratch.data.tokenizer import SimpleTokenizer, iter_directory_texts
 from llm_from_scratch.data.vocabulary import build_vocabulary
 
 
@@ -12,7 +8,7 @@ def test_splits_words_and_commas_and_periods():
     tokenizer = SimpleTokenizer()
     text = "Hello, world. This, is a test."
 
-    result = tokenizer.tokenize(text)
+    result = list(tokenizer.tokenize([text]))
 
     assert result == [
         "Hello",
@@ -32,7 +28,7 @@ def test_handles_question_marks_and_double_dashes():
     tokenizer = SimpleTokenizer()
     text = "Hello, world. Is this-- a test?"
 
-    result = tokenizer.tokenize(text)
+    result = list(tokenizer.tokenize([text]))
 
     assert result == [
         "Hello",
@@ -51,7 +47,7 @@ def test_handles_question_marks_and_double_dashes():
 def test_tokenizes_the_verdict_into_4690_tokens(the_verdict_text):
     tokenizer = SimpleTokenizer()
 
-    result = tokenizer.tokenize(the_verdict_text)
+    result = list(tokenizer.tokenize([the_verdict_text]))
 
     assert len(result) == 4690
 
@@ -59,7 +55,7 @@ def test_tokenizes_the_verdict_into_4690_tokens(the_verdict_text):
 def test_first_thirty_tokens_of_the_verdict(the_verdict_text):
     tokenizer = SimpleTokenizer()
 
-    result = tokenizer.tokenize(the_verdict_text)
+    result = list(tokenizer.tokenize([the_verdict_text]))
 
     assert result[:30] == [
         "I",
@@ -95,20 +91,42 @@ def test_first_thirty_tokens_of_the_verdict(the_verdict_text):
     ]
 
 
-def test_iter_tokens_flattens_tokenized_chunks_of_in_memory_text():
+def test_tokenize_flattens_tokens_across_multiple_chunks_of_text():
     texts = ["Hello, world.", "Another chunk!"]
 
-    tokens = list(iter_tokens(texts))
+    tokens = list(SimpleTokenizer().tokenize(texts))
 
     assert tokens == ["Hello", ",", "world", ".", "Another", "chunk", "!"]
 
 
-def test_iter_tokens_uses_the_given_tokenizer():
-    class UpperTokenizer(SimpleTokenizer):
-        def tokenize(self, text: str) -> list[str]:
-            return [token.upper() for token in super().tokenize(text)]
+def test_tokenize_pulls_one_chunk_at_a_time():
+    # A generator that records the order chunks are pulled in demonstrates
+    # that tokenize() streams -- it never asks for chunk N+1 before it has
+    # finished yielding every token from chunk N.
+    pulled = []
 
-    tokens = list(iter_tokens(["hello world"], tokenizer=UpperTokenizer()))
+    def texts():
+        for text in ["one two", "three four"]:
+            pulled.append(text)
+            yield text
+
+    tokens = SimpleTokenizer().tokenize(texts())
+
+    assert next(tokens) == "one"
+    assert pulled == ["one two"]
+    assert next(tokens) == "two"
+    assert pulled == ["one two"]
+    assert next(tokens) == "three"
+    assert pulled == ["one two", "three four"]
+
+
+def test_tokenize_can_be_subclassed_to_transform_tokens():
+    class UpperTokenizer(SimpleTokenizer):
+        def tokenize(self, texts):
+            for token in super().tokenize(texts):
+                yield token.upper()
+
+    tokens = list(UpperTokenizer().tokenize(["hello world"]))
 
     assert tokens == ["HELLO", "WORLD"]
 
@@ -126,25 +144,25 @@ def test_iter_directory_texts_yields_one_chunk_per_file(tmp_path: Path):
     assert texts == ["first file", "second file"]
 
 
-def test_iter_tokens_output_can_feed_build_vocabulary():
-    # iter_tokens produces a plain iterator over strings, which is all
+def test_tokenize_output_can_feed_build_vocabulary():
+    # tokenize() produces a plain iterator over strings, which is all
     # build_vocabulary (from the independent vocabulary module) needs.
     texts = ["the cat sat.", "the dog sat."]
 
-    vocabulary = build_vocabulary(iter_tokens(texts))
+    vocabulary = build_vocabulary(SimpleTokenizer().tokenize(texts))
 
     assert len(vocabulary) == len({"the", "cat", "sat", ".", "dog"})
     assert "cat" in vocabulary
     assert "bird" not in vocabulary
 
 
-def test_iter_directory_texts_output_can_feed_iter_tokens_and_build_vocabulary(
+def test_iter_directory_texts_output_can_feed_tokenize_and_build_vocabulary(
     tmp_path: Path,
 ):
     (tmp_path / "doc1.txt").write_text("Hello, world.")
     (tmp_path / "doc2.txt").write_text("Hello again, world.")
 
-    vocabulary = build_vocabulary(iter_tokens(iter_directory_texts(tmp_path)))
+    vocabulary = build_vocabulary(SimpleTokenizer().tokenize(iter_directory_texts(tmp_path)))
 
     for token in ["Hello", "world", "again", ",", "."]:
         assert token in vocabulary

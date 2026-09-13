@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, render_template, request
 
-from llm_from_scratch.data.tokenizer import iter_tokens
+from llm_from_scratch.data.tokenizer import SimpleTokenizer
 from llm_from_scratch.data.vocabulary import build_vocabulary
 from viz.components.examples import EXAMPLES, read_example
 
@@ -33,6 +33,8 @@ component = {
     "blueprint": bp,
 }
 
+_tokenizer = SimpleTokenizer()
+
 
 @bp.get("/")
 def index():
@@ -44,7 +46,7 @@ def index():
 def build():
     payload = request.get_json(silent=True) or {}
     text = payload.get("text", "")
-    vocabulary = build_vocabulary(iter_tokens([text]))
+    vocabulary = build_vocabulary(_tokenizer.tokenize([text]))
     entries = [{"token": vocabulary.id_to_token(i), "id": i} for i in range(len(vocabulary))]
     return jsonify(vocabulary=entries, size=len(vocabulary))
 

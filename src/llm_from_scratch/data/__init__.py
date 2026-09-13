@@ -1,8 +1,4 @@
-from llm_from_scratch.data.tokenizer import (
-    SimpleTokenizer,
-    iter_directory_texts,
-    iter_tokens,
-)
+from llm_from_scratch.data.tokenizer import SimpleTokenizer, iter_directory_texts
 from llm_from_scratch.data.vocabulary import Vocabulary, build_vocabulary
 
 __all__ = [
@@ -10,5 +6,4 @@ __all__ = [
     "Vocabulary",
     "build_vocabulary",
     "iter_directory_texts",
-    "iter_tokens",
 ]

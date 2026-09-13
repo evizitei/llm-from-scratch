@@ -1,15 +1,18 @@
-"""A minimal, regex-based tokenizer, plus helpers for streaming text into it.
+"""A minimal, regex-based tokenizer, plus a directory-of-files text source.
 
 This mirrors the "toy" tokenizer built up in chapter 2 of *Build a Large
 Language Model (From Scratch)*: text is split on whitespace and a fixed set
 of punctuation characters, and the resulting whitespace-only fragments are
 dropped.
 
-- ``SimpleTokenizer`` turns one string of text into a list of tokens.
-- ``iter_tokens`` / ``iter_directory_texts`` turn *some source* of text
-  (an in-memory iterable, a directory of files, ...) into a flat stream of
-  tokens. Adding a new source only ever means writing a new "iterator over
-  text" function -- nothing downstream needs to change.
+``SimpleTokenizer`` works iterator-to-iterator: it takes an iterator over
+chunks of text (a list held in memory, a generator reading files lazily, or
+anything else) and returns an iterator over tokens. It pulls one chunk at a
+time, yields that chunk's tokens one at a time, and only then pulls the
+next chunk -- so it never needs the whole input, or the whole token stream,
+in memory at once. That makes it equally happy tokenizing a short string
+(wrapped in a one-element list) or an arbitrarily large body of text spread
+across many files, e.g. via ``iter_directory_texts``.
 
 This module deliberately knows nothing about vocabularies -- see
 ``llm_from_scratch.data.vocabulary`` for that. The two are independent: a
@@ -36,7 +39,7 @@ _DEFAULT_PATTERN = re.compile(r'([,.:;?_!"()\']|--|\s)')
 
 
 class SimpleTokenizer:
-    """Splits text into word and punctuation tokens using a regex.
+    """Splits a stream of text chunks into a stream of tokens using a regex.
 
     Parameters
     ----------
@@ -50,29 +53,18 @@ class SimpleTokenizer:
     def __init__(self, pattern: re.Pattern[str] = _DEFAULT_PATTERN) -> None:
         self._pattern = pattern
 
-    def tokenize(self, text: str) -> list[str]:
-        """Split ``text`` into a list of non-whitespace tokens.
+    def tokenize(self, texts: Iterable[str]) -> Iterator[str]:
+        """Tokenize a stream of text chunks into a stream of tokens.
 
-        Whitespace-only fragments produced by the split are dropped, and
-        every remaining token is stripped of leading/trailing whitespace.
+        ``texts`` is consumed one chunk at a time; each chunk is split into
+        tokens and yielded before the next chunk is pulled, so this never
+        holds more than one chunk's worth of text (and tokens) in memory at
+        once. Whitespace-only fragments are dropped, and every remaining
+        token is stripped of leading/trailing whitespace.
         """
-        pieces = self._pattern.split(text)
-        return [piece.strip() for piece in pieces if piece.strip()]
-
-
-def iter_tokens(
-    texts: Iterable[str], tokenizer: SimpleTokenizer | None = None
-) -> Iterator[str]:
-    """Tokenize each chunk of text in ``texts``, yielding tokens one at a time.
-
-    ``texts`` can be any iterable of text chunks -- a list held in memory, a
-    generator reading files lazily, or anything else. Chunks are consumed
-    one at a time and each one's tokens are yielded before moving on to the
-    next, so this never needs more than one chunk of text in memory at once.
-    """
-    tokenizer = tokenizer or SimpleTokenizer()
-    for text in texts:
-        yield from tokenizer.tokenize(text)
+        for text in texts:
+            pieces = self._pattern.split(text)
+            yield from (piece.strip() for piece in pieces if piece.strip())
 
 
 def iter_directory_texts(directory: str | Path) -> Iterator[str]:

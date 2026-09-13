@@ -45,7 +45,7 @@ def index():
 def tokenize():
     payload = request.get_json(silent=True) or {}
     text = payload.get("text", "")
-    tokens = _tokenizer.tokenize(text)
+    tokens = list(_tokenizer.tokenize([text]))
     return jsonify(tokens=tokens, count=len(tokens))
 
 

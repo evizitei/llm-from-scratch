@@ -3,9 +3,9 @@
 This module knows nothing about tokenizers, files, or where tokens come
 from -- it only knows how to consume an iterator over strings, one token at
 a time, and turn that into a ``Vocabulary``. Anything that produces such an
-iterator (``llm_from_scratch.data.tokenizer.iter_tokens``, a plain list held
-in memory, or anything else) can be plugged in without either module needing
-to import the other.
+iterator (``llm_from_scratch.data.tokenizer.SimpleTokenizer.tokenize``, a
+plain list held in memory, or anything else) can be plugged in without
+either module needing to import the other.
 """
 
 from __future__ import annotations
