@@ -13,6 +13,10 @@ uv sync
 
 ## Usage
 
+Common commands are also available via [`just`](https://github.com/casey/just)
+(`just` on its own lists them): `just sync`, `just test`, `just lint`,
+`just fmt`, `just run`, `just lab`, `just viz`.
+
 Run a script with the project's environment:
 
 ```bash
