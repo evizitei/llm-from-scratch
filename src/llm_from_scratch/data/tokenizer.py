@@ -32,10 +32,11 @@ import re
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 
-# Splits on: whitespace, common punctuation ,.:;?_!"()' and em/en-dashes
+# Splits on: whitespace, common punctuation ,.:;?_!"()' (including curly
+# "smart" quotes “”‘’, as seen in e.g. Pride and Prejudice) and em/en-dashes
 # rendered as double hyphens ("--"). Capturing groups in re.split keep the
 # delimiters themselves as tokens in the result.
-_DEFAULT_PATTERN = re.compile(r'([,.:;?_!"()\']|--|\s)')
+_DEFAULT_PATTERN = re.compile(r'([,.:;?_!"()\'“”‘’]|--|\s)')
 
 
 class SimpleTokenizer:

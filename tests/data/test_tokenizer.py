@@ -44,6 +44,30 @@ def test_handles_question_marks_and_double_dashes():
     ]
 
 
+def test_handles_curly_quotation_marks():
+    # Pride and Prejudice (and plenty of other real-world text) uses curly
+    # "smart" quotes rather than straight ones -- the tokenizer needs to
+    # split them off as their own tokens too, not just the straight ' and "
+    # that the default pattern already knows about.
+    tokenizer = SimpleTokenizer()
+    text = "“Impossible, Mr. Bennet, impossible!”"
+
+    result = list(tokenizer.tokenize([text]))
+
+    assert result == [
+        "“",
+        "Impossible",
+        ",",
+        "Mr",
+        ".",
+        "Bennet",
+        ",",
+        "impossible",
+        "!",
+        "”",
+    ]
+
+
 def test_tokenizes_the_verdict_into_4690_tokens(the_verdict_text):
     tokenizer = SimpleTokenizer()
 
