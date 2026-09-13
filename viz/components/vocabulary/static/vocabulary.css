@@ -1,0 +1,111 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  background: #fafafa;
+  color: #1a1a1a;
+}
+
+.back a { color: #0b5fff; text-decoration: none; font-size: 0.9rem; }
+.back a:hover { text-decoration: underline; }
+
+h1 { font-size: 1.4rem; margin: 0.5rem 0 0.25rem; }
+.intro { color: #555; font-size: 0.95rem; margin-top: 0; }
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.example-btn,
+#load-all-btn {
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.example-btn:hover,
+#load-all-btn:hover { background: #e2e2e2; }
+
+#load-all-btn { font-weight: 600; }
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.95rem;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.75rem 0 1.25rem;
+}
+
+#build-btn {
+  background: #0b5fff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+#build-btn:hover { background: #094cd1; }
+
+#vocab-size { color: #555; font-size: 0.85rem; }
+
+#filter-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+#filter-input:disabled { background: #f0f0f0; color: #999; }
+
+#vocab-entries {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.4rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.vocab-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  background: #eef3ff;
+  border: 1px solid #c7d7ff;
+  border-radius: 5px;
+  padding: 0.2rem 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  overflow: hidden;
+}
+
+.vocab-id {
+  color: #6b7fb0;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.vocab-token {
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

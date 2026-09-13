@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Vocabulary Builder — llm-from-scratch</title>
+  <link rel="stylesheet" href="{{ url_for('vocabulary.static', filename='vocabulary.css') }}">
+</head>
+<body>
+  <p class="back"><a href="{{ url_for('index') }}">&larr; components</a></p>
+  <h1>Vocabulary Builder</h1>
+  <p class="intro">
+    Type or paste text, or load one or all of the examples below, then build
+    an alphabetically sorted token &rarr; integer vocabulary from it.
+  </p>
+
+  <div class="examples">
+    {% for example in examples %}
+    <button type="button" class="example-btn" data-example-id="{{ example.id }}">{{ example.label }}</button>
+    {% endfor %}
+    <button type="button" id="load-all-btn">Load all examples</button>
+  </div>
+
+  <textarea id="input-text" rows="12" placeholder="Type or paste text here..."></textarea>
+
+  <div class="actions">
+    <button type="button" id="build-btn">Build Vocabulary</button>
+    <span id="vocab-size"></span>
+  </div>
+
+  <input type="text" id="filter-input" placeholder="Filter tokens by substring..." disabled>
+
+  <div id="vocab-entries"></div>
+
+  <script src="{{ url_for('vocabulary.static', filename='vocabulary.js') }}"></script>
+</body>
+</html>
