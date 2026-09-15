@@ -27,8 +27,8 @@ component = {
     "slug": "vocabulary",
     "name": "Vocabulary Builder",
     "description": (
-        "Build an alphabetically sorted token → integer vocabulary "
-        "from typed text or bundled example texts."
+        "Build a token → integer vocabulary from typed text or bundled "
+        "example texts, with reserved special tokens up front."
     ),
     "blueprint": bp,
 }
@@ -47,7 +47,14 @@ def build():
     payload = request.get_json(silent=True) or {}
     text = payload.get("text", "")
     vocabulary = build_vocabulary(_tokenizer.tokenize([text]))
-    entries = [{"token": vocabulary.id_to_token(i), "id": i} for i in range(len(vocabulary))]
+    entries = [
+        {
+            "token": vocabulary.id_to_token(i),
+            "id": i,
+            "special": vocabulary.id_to_token(i) in vocabulary.special_tokens,
+        }
+        for i in range(len(vocabulary))
+    ]
     return jsonify(vocabulary=entries, size=len(vocabulary))
 
 

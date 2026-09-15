@@ -173,7 +173,7 @@ def test_tokenize_output_can_feed_build_vocabulary():
     # build_vocabulary (from the independent vocabulary module) needs.
     texts = ["the cat sat.", "the dog sat."]
 
-    vocabulary = build_vocabulary(SimpleTokenizer().tokenize(texts))
+    vocabulary = build_vocabulary(SimpleTokenizer().tokenize(texts), special_tokens=())
 
     assert len(vocabulary) == len({"the", "cat", "sat", ".", "dog"})
     assert "cat" in vocabulary

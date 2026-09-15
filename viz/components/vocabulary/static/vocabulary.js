@@ -46,9 +46,9 @@ async function buildVocabulary() {
 
 function renderEntries(entries) {
   entriesEl.innerHTML = "";
-  for (const { token, id } of entries) {
+  for (const { token, id, special } of entries) {
     const row = document.createElement("div");
-    row.className = "vocab-entry";
+    row.className = special ? "vocab-entry vocab-entry-special" : "vocab-entry";
 
     const idSpan = document.createElement("span");
     idSpan.className = "vocab-id";
