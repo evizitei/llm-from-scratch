@@ -1,7 +1,24 @@
 from pathlib import Path
 
-from llm_from_scratch.data.tokenizer import SimpleTokenizer, iter_directory_texts
-from llm_from_scratch.data.vocabulary import build_vocabulary
+import pytest
+
+from llm_from_scratch.data.tokenizer import (
+    SimpleTokenizer,
+    VocabularyTokenizer,
+    iter_directory_texts,
+)
+from llm_from_scratch.data.vocabulary import (
+    END_OF_TEXT_TOKEN,
+    UNKNOWN_TOKEN,
+    build_vocabulary,
+)
+
+
+def _tokenizer_for(*texts: str, special_tokens=None) -> VocabularyTokenizer:
+    """A VocabularyTokenizer over a vocabulary built from ``texts``."""
+    kwargs = {} if special_tokens is None else {"special_tokens": special_tokens}
+    vocabulary = build_vocabulary(SimpleTokenizer().tokenize(texts), **kwargs)
+    return VocabularyTokenizer(vocabulary)
 
 
 def test_splits_words_and_commas_and_periods():
@@ -186,8 +203,163 @@ def test_iter_directory_texts_output_can_feed_tokenize_and_build_vocabulary(
     (tmp_path / "doc1.txt").write_text("Hello, world.")
     (tmp_path / "doc2.txt").write_text("Hello again, world.")
 
-    vocabulary = build_vocabulary(SimpleTokenizer().tokenize(iter_directory_texts(tmp_path)))
+    vocabulary = build_vocabulary(
+        SimpleTokenizer().tokenize(iter_directory_texts(tmp_path))
+    )
 
     for token in ["Hello", "world", "again", ",", "."]:
         assert token in vocabulary
     assert vocabulary.token_to_id("again") < vocabulary.token_to_id("world")
+
+
+# --- VocabularyTokenizer: encoding ----------------------------------------
+
+
+def test_encode_maps_text_to_the_vocabulary_ids():
+    tokenizer = _tokenizer_for("the cat sat")
+    vocabulary = tokenizer.vocabulary
+
+    ids = list(tokenizer.encode(["the cat"]))
+
+    assert ids == [vocabulary.token_to_id("the"), vocabulary.token_to_id("cat")]
+
+
+def test_encode_splits_punctuation_the_same_way_the_vocabulary_was_built():
+    tokenizer = _tokenizer_for("the cat sat.")
+
+    tokens = list(tokenizer.decode_to_tokens(tokenizer.encode(["the cat sat."])))
+
+    assert tokens == ["the", "cat", "sat", "."]
+
+
+def test_encode_substitutes_the_unknown_token_for_unseen_words():
+    tokenizer = _tokenizer_for("the cat sat")
+
+    ids = list(tokenizer.encode(["the hippopotamus"]))
+
+    assert ids == [
+        tokenizer.vocabulary.token_to_id("the"),
+        tokenizer.vocabulary.unknown_id,
+    ]
+
+
+def test_encode_raises_for_unseen_words_without_an_unknown_token():
+    tokenizer = _tokenizer_for("the cat", special_tokens=())
+
+    with pytest.raises(KeyError):
+        list(tokenizer.encode(["the hippopotamus"]))
+
+
+def test_encode_tokens_skips_splitting_for_an_already_tokenized_stream():
+    tokenizer = _tokenizer_for("the cat sat")
+
+    # "the cat" as one string would be split into two tokens; as a single
+    # pre-split token it is simply unknown.
+    ids = list(tokenizer.encode_tokens(iter(["the cat"])))
+
+    assert ids == [tokenizer.vocabulary.unknown_id]
+
+
+def test_encode_is_lazy():
+    # Nothing is pulled from the input until the output is pulled from,
+    # which is what lets a corpus larger than memory stream through.
+    pulled = []
+
+    def texts():
+        for text in ["a", "b", "c"]:
+            pulled.append(text)
+            yield text
+
+    tokenizer = _tokenizer_for("a b c")
+    ids = tokenizer.encode(texts())
+
+    assert pulled == []
+    next(ids)
+    assert pulled == ["a"]
+
+
+# --- VocabularyTokenizer: decoding ----------------------------------------
+
+
+def test_decode_reconstructs_the_original_text():
+    text = "Hello, world. This is a test."
+    tokenizer = _tokenizer_for(text)
+
+    assert "".join(tokenizer.decode(tokenizer.encode([text]))) == text
+
+
+def test_decode_reconstructs_spacing_around_quotes_and_brackets():
+    text = 'She said "yes" and (then) left; he didn\'t.'
+    tokenizer = _tokenizer_for(text)
+
+    assert "".join(tokenizer.decode(tokenizer.encode([text]))) == text
+
+
+def test_decode_reconstructs_spacing_around_curly_quotes():
+    text = "“Impossible, Mr. Bennet, impossible!”"
+    tokenizer = _tokenizer_for(text)
+
+    assert "".join(tokenizer.decode(tokenizer.encode([text]))) == text
+
+
+def test_decode_cannot_recover_words_that_hit_the_unknown_token():
+    # The round trip is lossy by construction: once a word has collapsed
+    # into <|unk|>, nothing downstream can tell what it used to be.
+    tokenizer = _tokenizer_for("the cat sat")
+
+    text = "".join(tokenizer.decode(tokenizer.encode(["the hippopotamus"])))
+
+    assert text == f"the {UNKNOWN_TOKEN}"
+
+
+def test_decode_to_tokens_yields_tokens_rather_than_text():
+    tokenizer = _tokenizer_for("the cat sat.")
+
+    tokens = list(tokenizer.decode_to_tokens(tokenizer.encode(["the cat."])))
+
+    assert tokens == ["the", "cat", "."]
+
+
+def test_decode_can_skip_special_tokens():
+    tokenizer = _tokenizer_for("the cat")
+    ids = tokenizer.encode_tokens(iter(["the", END_OF_TEXT_TOKEN, "aardvark", "cat"]))
+
+    assert "".join(tokenizer.decode(ids, skip_special_tokens=True)) == "the cat"
+
+
+def test_decode_raises_for_an_id_outside_the_vocabulary():
+    # Unlike an unseen word, an out-of-range id is a bug rather than data.
+    tokenizer = _tokenizer_for("the cat")
+
+    with pytest.raises(KeyError):
+        list(tokenizer.decode(iter([len(tokenizer.vocabulary)])))
+
+
+def test_decode_is_lazy():
+    pulled = []
+
+    def ids():
+        for id_ in [0, 1]:
+            pulled.append(id_)
+            yield id_
+
+    tokenizer = _tokenizer_for("a b")
+    tokens = tokenizer.decode(ids())
+
+    assert pulled == []
+    next(tokens)
+    assert pulled == [0]
+
+
+def test_vocabulary_tokenizer_accepts_a_custom_splitting_rule():
+    # The splitting rule is injected, so a vocabulary built with one
+    # tokenizer can be encoded against with the very same one.
+    splitter = SimpleTokenizer()
+    vocabulary = build_vocabulary(splitter.tokenize(["the cat sat"]))
+
+    tokenizer = VocabularyTokenizer(vocabulary, tokenizer=splitter)
+
+    assert list(tokenizer.encode(["the cat"])) == [
+        vocabulary.token_to_id("the"),
+        vocabulary.token_to_id("cat"),
+    ]

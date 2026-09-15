@@ -1,24 +1,17 @@
-"""Building a token -> integer vocabulary, and streaming tokens through it.
+"""Building a token -> integer vocabulary from a stream of tokens.
 
 This module knows nothing about tokenizers, files, or where tokens come
 from -- it only knows how to consume an iterator over strings, one token at
 a time, and turn that into a ``Vocabulary``. Anything that produces such an
 iterator (``llm_from_scratch.data.tokenizer.SimpleTokenizer.tokenize``, a
-plain list held in memory, or anything else) can be plugged in without
-either module needing to import the other.
+plain list held in memory, or anything else) can be plugged in without this
+module needing to know about it.
 
-A built ``Vocabulary`` streams in both directions:
-
-``encode`` turns an iterator over tokens into an iterator over ids, and
-``decode`` turns an iterator over ids back into an iterator over tokens.
-Both are lazy, for the same reason the tokenizer is: a corpus big enough to
-be interesting is too big to hold as a list of ids.
-
-Note that ``decode`` yields *tokens*, not text. Gluing tokens back into a
-string means knowing which ones take a leading space, which is a fact about
-how the text was split -- i.e. the tokenizer's business, not the
-vocabulary's. Keeping that knowledge out of here is what lets the two
-modules stay independent.
+A ``Vocabulary`` is a *lookup table*, and nothing more: it answers what id a
+token has, what token an id has, and which of its entries are reserved. It
+does not run streams of text or ids through itself -- that is
+``llm_from_scratch.data.tokenizer.VocabularyTokenizer``'s job, and the
+dependency points that way only. A vocabulary never needs a tokenizer.
 
 Out-of-vocabulary tokens
 ------------------------
@@ -54,7 +47,7 @@ vocabulary is the pedagogical stepping stone to that, not the destination.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 
 #: Stands in for any token that isn't in the vocabulary.
 UNKNOWN_TOKEN = "<|unk|>"
@@ -116,54 +109,22 @@ class Vocabulary:
         """The id of ``UNKNOWN_TOKEN``, or ``None`` if it isn't reserved."""
         return self._token_to_id.get(UNKNOWN_TOKEN)
 
+    def is_special_id(self, id_: int) -> bool:
+        """Whether ``id_`` belongs to a reserved token rather than a word."""
+        return id_ in self._special_ids
+
     def token_to_id(self, token: str) -> int:
         """Return the integer id for ``token``.
 
         Raises ``KeyError`` for an unknown token. This is the strict
-        lookup; use ``encode`` when you want unknown tokens folded into
-        ``<|unk|>`` instead.
+        lookup -- substituting ``<|unk|>`` for tokens that aren't here is
+        the tokenizer's decision to make, not the table's.
         """
         return self._token_to_id[token]
 
     def id_to_token(self, id_: int) -> str:
         """Return the token for integer id ``id_``."""
         return self._id_to_token[id_]
-
-    def encode(self, tokens: Iterable[str]) -> Iterator[int]:
-        """Stream tokens into their ids, one at a time.
-
-        Tokens that aren't in the vocabulary become ``<|unk|>``'s id. If
-        the vocabulary has no ``<|unk|>`` entry there is nothing sensible
-        to substitute, so an unknown token raises ``KeyError`` instead --
-        silently dropping it would quietly corrupt the stream.
-        """
-        unknown_id = self.unknown_id
-        for token in tokens:
-            if unknown_id is None:
-                yield self._token_to_id[token]
-            else:
-                yield self._token_to_id.get(token, unknown_id)
-
-    def decode(
-        self,
-        ids: Iterable[int],
-        skip_special_tokens: bool = False,
-    ) -> Iterator[str]:
-        """Stream ids back into their tokens, one at a time.
-
-        An id that isn't in the vocabulary raises ``KeyError``: unlike an
-        unseen word, an out-of-range id is a bug (a mismatched vocabulary,
-        an off-by-one in a model's output layer) rather than data, and is
-        worth failing loudly on.
-
-        Pass ``skip_special_tokens=True`` to drop reserved tokens from the
-        output -- the usual choice when showing generated text to a human,
-        who has no use for seeing ``<|endoftext|>``.
-        """
-        for id_ in ids:
-            if skip_special_tokens and id_ in self._special_ids:
-                continue
-            yield self._id_to_token[id_]
 
 
 def build_vocabulary(
@@ -174,8 +135,8 @@ def build_vocabulary(
 
     ``special_tokens`` are assigned ids first, in the order given, and the
     corpus tokens follow in alphabetical order. Pass an empty sequence for
-    a vocabulary of nothing but corpus tokens -- at the cost of ``encode``
-    raising on any unseen word.
+    a vocabulary of nothing but corpus tokens -- at the cost of leaving a
+    tokenizer with nothing to substitute for an unseen word.
 
     ``tokens`` is consumed one token at a time, so it works equally well
     whether the tokens are already in memory or are being produced lazily
