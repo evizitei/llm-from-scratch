@@ -1,3 +1,10 @@
+from llm_from_scratch.data.sampler import (
+    ContextPair,
+    DataSampler,
+    TextEncoder,
+    TokenWindow,
+    VocabularyEncoder,
+)
 from llm_from_scratch.data.tokenizer import (
     SimpleTokenizer,
     VocabularyTokenizer,
@@ -15,8 +22,13 @@ __all__ = [
     "DEFAULT_SPECIAL_TOKENS",
     "END_OF_TEXT_TOKEN",
     "UNKNOWN_TOKEN",
+    "ContextPair",
+    "DataSampler",
     "SimpleTokenizer",
+    "TextEncoder",
+    "TokenWindow",
     "Vocabulary",
+    "VocabularyEncoder",
     "VocabularyTokenizer",
     "build_vocabulary",
     "iter_directory_texts",

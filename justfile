@@ -4,8 +4,10 @@ default:
     just --list
 
 # Sync the uv-managed environment (installs/updates deps from uv.lock).
+# --all-groups is load-bearing: `test` and `viz` are non-default groups, so a
+# plain `uv sync` would uninstall pytest and flask.
 sync:
-    uv sync
+    uv sync --all-groups
 
 # Run the test suite.
 test:
